@@ -1,0 +1,257 @@
+{
+  "name": "create image",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "ImageTitle"
+            },
+            {
+              "name": "ImagePrompt"
+            },
+            {
+              "name": "chatID"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -464,
+        -192
+      ],
+      "id": "9cc76931-aae6-4363-b9a4-9a81b63fec2e",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        0
+      ],
+      "id": "c6013dad-d8a0-4f65-9bc6-c8724f1c132f",
+      "name": "GPT 4.1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        96,
+        -192
+      ],
+      "id": "6cf1f7e4-518b-400d-b1bf-39e4d59a2bd8",
+      "name": "Create Image"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Overview\nYou are an expert image prompt engineer. Your role is to take a simple image topic or concept and expand it into a fully detailed image prompt that can be fed into a text-to-image generation model.\n\n## Prompt Instructions\nYour detailed prompt must clearly describe the following:\n1) Main Subject: What is the primary focus of the image?\n2) Background/Setting: What is happening in the background or environment?\n3) Style: Specify the visual style (e.g., hyper-realistic, digital painting, watercolor, anime, 3D render, etc.).\n4) Mood/Lighting: Describe the emotional tone and lighting (e.g., soft warm sunset, moody storm clouds, futuristic neon lights).\n5) Additional Details: Mention any specific objects, clothing, colors, textures, or notable features that should appear.\n\n## Output Format\n- Begin with a clean, natural-sounding descriptive prompt that integrates all of the above elements seamlessly.\n- The description should sound like it’s written specifically for an AI to generate a professional, high-quality image\n- Avoid repeating the original topic verbatim; instead, reframe it into a vivid scene or visual concept.\n- Use rich, vivid language and imagery.\n\n## Example\n- Input: \"A futuristic city\"\n- Output: \"A sprawling futuristic city at night, glowing with neon lights in shades of blue and purple. Towering skyscrapers with sleek, glass facades line the horizon. Flying cars zoom between the buildings under a cloudy, electric sky. The streets below are bustling with holographic advertisements and people wearing high-tech fashion. Digital painting style, highly detailed, cinematic perspective, moody atmosphere with soft neon reflections on wet pavement.\"",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -256,
+        -192
+      ],
+      "id": "9cfe70ce-d9da-44e7-bb82-cba4206df551",
+      "name": "Image Prompt"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        256,
+        -192
+      ],
+      "id": "00cec96f-910b-459d-a7b9-7bd38a01308d",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('When Executed by Another Workflow').item.json.chatID }}",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        496,
+        -304
+      ],
+      "id": "bef15a6f-6123-4b8a-a78d-8e9657ab5417",
+      "name": "Send a photo message",
+      "webhookId": "fcc057fc-31b4-4c46-be33-de233b3ab2d5"
+    },
+    {
+      "parameters": {
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        496,
+        -80
+      ],
+      "id": "80d37ab0-4b2b-4e7a-a550-8363c491972b",
+      "name": "Upload file"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        704,
+        -80
+      ],
+      "id": "dc4d1c22-32c8-4c28-aebf-dbec219cd7bb",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QbRuq9muzBkj9h08",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "#### Google sheet contains fields as follows:\nTitle\ntype \nrequest\nID\nLink",
+        "width": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        880,
+        -96
+      ],
+      "typeVersion": 1,
+      "id": "a543bd18-7e63-42c2-a317-a8742de8af47",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Image Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 4.1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Image Prompt",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Prompt": {
+      "main": [
+        [
+          {
+            "node": "Create Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Image": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Send a photo message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "b5e2ba90-f9e6-45a2-8292-e62fb8c3c445",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4eb4954d8c85a8a274e66ddf7db12e14891426a6716025edf035ce117c6739e7"
+  },
+  "id": "bTcqbkL184maR1Eg",
+  "tags": []
+}
