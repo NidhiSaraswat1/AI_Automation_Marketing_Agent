@@ -1,0 +1,373 @@
+{
+  "name": "Search Image",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Intent"
+            },
+            {
+              "name": "Image"
+            },
+            {
+              "name": "chatID"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b91d19ad-ff59-4a8c-9b6d-9b20183caba0",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Image }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# Overview\nyou are an image retrieval agent.when the user provides a query, your task is to search the \"Image Database\" using the keywords from the query. Locate the most relevant matching image.\n\n# output\n- return the name, ID and link of the image.\n- if no image is founf , output \"Not found\"."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "be503855-c68a-4464-b2bb-a208f0835e25",
+      "name": "Image search agent"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"image_name\": \"string | null\",\n  \"image_id\":\"string | null\",\n  \"image_link\":\"string | null\",\n  \"status\":\"found | not_found\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        176
+      ],
+      "id": "621ec2b2-bb8e-432f-a2b3-1a3e44951b52",
+      "name": "Name, ID, link"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        304,
+        192
+      ],
+      "id": "2856188c-65fd-46ba-a218-92fd05810821",
+      "name": "Image database",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QbRuq9muzBkj9h08",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        192,
+        192
+      ],
+      "id": "fd22fc09-96a0-42f9-b715-9ab0d80cf60b",
+      "name": "GPT 4.1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3fbd5f02-21bf-4877-9ff0-1c0168aa546c",
+              "name": "response",
+              "value": "Image is not found in the database",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        736,
+        -176
+      ],
+      "id": "5c890a7e-ce82-4bfc-a0e1-6db5f9d00ffc",
+      "name": "not found."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9dc1e9f9-58fa-4e8c-b5b6-bfe32a5d9c93",
+              "leftValue": "",
+              "rightValue": "not_found",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        0
+      ],
+      "id": "1f0df8e3-96f9-4ff0-bfc0-a9d5648f25af",
+      "name": "Not Found?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9dc1e9f9-58fa-4e8c-b5b6-bfe32a5d9c93",
+              "leftValue": "={{ $('When Executed by Another Workflow').item.json.Intent }}",
+              "rightValue": "Get",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        0
+      ],
+      "id": "a6154c0d-e976-4050-b67c-7b992cb6ff60",
+      "name": "Get?"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1008,
+        -96
+      ],
+      "id": "d0ab28c3-0f12-43ed-b968-2ecc3083f423",
+      "name": "Download file"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a7a6e013-0399-4393-acbe-180aa791ec38",
+              "name": "ImageName",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "db0dd3cc-419c-4e37-b01e-a7370ed83a8a",
+              "name": "ImageID",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1008,
+        96
+      ],
+      "id": "f4b6c223-a554-4c25-a08b-95adf84ca61c",
+      "name": "Edit"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1216,
+        -96
+      ],
+      "id": "06b2a875-f0db-4e2c-a3bd-56b9aba3b139",
+      "name": "Send photo",
+      "webhookId": "383d1c82-d272-4474-80dd-88729fe182a1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Image search agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Name, ID, link": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Image search agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image database": {
+      "ai_tool": [
+        [
+          {
+            "node": "Image search agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 4.1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Image search agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image search agent": {
+      "main": [
+        [
+          {
+            "node": "Not Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not Found?": {
+      "main": [
+        [
+          {
+            "node": "not found.",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get?": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Send photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "9a3b24df-4ed8-4949-8740-6e23b2374d26",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4eb4954d8c85a8a274e66ddf7db12e14891426a6716025edf035ce117c6739e7"
+  },
+  "id": "RqfAxq5n3xnSjavX",
+  "tags": []
+}
